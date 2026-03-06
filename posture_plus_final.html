@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Posture Plus — User Flow</title>
+<style>
+/* ── RESET ── */
+* { margin:0; padding:0; box-sizing:border-box; }
+/* iOS Safari local file: NEVER use overflow:hidden on html/body */
+html { font-size:16px; -webkit-text-size-adjust:100%; }
+body {
+  font-family:-apple-system,'SF Pro Text','Helvetica Neue',Helvetica,Arial,sans-serif;
+  background:#F2F2F7;
+  color:#1C1C1E;
+  -webkit-font-smoothing:antialiased;
+  /* padding reserves space for fixed bars */
+  padding-top:56px;
+  padding-bottom:72px;
+}
+
+/* ── TOKENS ── */
+:root {
+  --blue:#007AFF; --blue-l:#E8F1FF;
+  --teal:#0A7EA4; --teal-l:#E0F4FC;
+  --green:#34C759; --green-l:#E3F9EB; --green-d:#1A7A34;
+  --amber:#FF9500; --amber-l:#FFF3E0; --amber-d:#7A4800;
+  --red:#FF3B30; --red-l:#FFEAE8; --red-d:#991A14;
+  --violet:#AF52DE; --violet-l:#F3E8FF;
+  --sep:rgba(60,60,67,0.15);
+  --muted:#8E8E93;
+  --card:#FFFFFF;
+  --bg:#F2F2F7;
+}
+
+/* ── TOPBAR ── */
+#topbar {
+  position:fixed;
+  top:0; left:0; right:0;
+  /* Use safe-area for notch/Dynamic Island */
+  padding-top:env(safe-area-inset-top,0px);
+  background:#F2F2F7;
+  border-bottom:1px solid var(--sep);
+  z-index:999;
+  /* NO overflow:hidden, NO backdrop-filter (causes iOS local issues) */
+}
+.tb-inner {
+  height:56px;
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  position:relative;
+}
+/* Back button: <a> tag works more reliably than <button> in iOS local files */
+#tBack {
+  display:none;
+  align-items:center;
+  gap:4px;
+  color:var(--blue);
+  font-size:17px;
+  font-weight:400;
+  text-decoration:none;
+  padding:10px 8px 10px 0;
+  /* Generous tap target */
+  min-width:44px; min-height:44px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:rgba(0,122,255,0.1);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+#tBack.show { display:flex; }
+.tb-chev {
+  font-size:22px;
+  line-height:1;
+  margin-top:-1px;
+  color:var(--blue);
+}
+#tTitle {
+  position:absolute;
+  left:50%; transform:translateX(-50%);
+  font-size:17px; font-weight:600;
+  color:#1C1C1E;
+  white-space:nowrap;
+  pointer-events:none;
+  max-width:55%;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.tb-logo {
+  margin-left:auto;
+  width:32px; height:32px;
+  background:var(--blue);
+  border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-weight:700; font-size:13px;
+}
+
+/* ── BOTTOM NAV ── */
+#botnav {
+  position:fixed;
+  bottom:0; left:0; right:0;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  background:#F2F2F7;
+  border-top:1px solid var(--sep);
+  z-index:999;
+  display:flex;
+}
+/* Use <a> tags for bottom nav — most reliable on iOS Safari local */
+.bn {
+  flex:1;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:3px;
+  padding:8px 4px;
+  min-height:49px;
+  color:var(--muted);
+  text-decoration:none;
+  cursor:pointer;
+  -webkit-tap-highlight-color:rgba(0,122,255,0.08);
+}
+.bn.active { color:var(--blue); }
+.bn-ico { font-size:22px; line-height:1; }
+.bn-lbl { font-size:10px; font-weight:500; }
+.bn.active .bn-lbl { font-weight:600; color:var(--blue); }
+
+/* ── SCREENS ── */
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* ── HOME ── */
+.home-wrap { padding:20px 16px 8px; }
+.home-hero { text-align:center; padding:8px 0 20px; }
+.home-hero h1 {
+  font-size:28px; font-weight:700;
+  line-height:1.2; letter-spacing:-0.5px;
+  margin-bottom:10px;
+}
+.home-hero p { font-size:14px; color:#48484A; line-height:1.55; max-width:290px; margin:0 auto; }
+
+.legend {
+  display:flex; flex-wrap:wrap;
+  gap:8px 18px; justify-content:center;
+  padding-bottom:20px;
+}
+.leg { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); }
+.ldot { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+
+.sec-label {
+  font-size:12px; font-weight:600; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.06em;
+  padding:0 4px 10px;
+}
+
+.panel-cards { display:flex; flex-direction:column; gap:14px; }
+
+/* ── PANEL CARD ── */
+/* Use <a> for the whole card — most reliable tap on iOS local Safari */
+.pcard {
+  display:block;
+  background:var(--card);
+  border-radius:18px;
+  box-shadow:0 1px 4px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.07);
+  text-decoration:none;
+  color:inherit;
+  cursor:pointer;
+  -webkit-tap-highlight-color:rgba(0,0,0,.04);
+  overflow:visible; /* NEVER hidden on iOS */
+}
+.pcard:active { opacity:.82; }
+
+.pcard-accent {
+  height:3px;
+  border-radius:18px 18px 0 0;
+  background:var(--blue);
+}
+.pcard-accent.teal { background:var(--teal); }
+
+.pcard-body { padding:18px 18px 16px; }
+.pcard-top { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+.pcard-ico {
+  width:48px; height:48px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; flex-shrink:0;
+}
+.pcard-ico.b { background:var(--blue-l); }
+.pcard-ico.t { background:var(--teal-l); }
+.pcard-name { font-size:17px; font-weight:700; letter-spacing:-.3px; margin-bottom:2px; }
+.pcard-desc { font-size:12.5px; color:var(--muted); }
+
+.chip-group {
+  background:var(--bg); border-radius:12px;
+  margin-bottom:14px;
+  overflow:hidden;
+}
+.chip-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--sep);
+  font-size:13px; color:#3A3A3C;
+}
+.chip-row:last-child { border-bottom:none; }
+
+.pcard-cta {
+  display:block; width:100%; height:46px;
+  border:none; border-radius:13px;
+  font-family:-apple-system,'Helvetica Neue',sans-serif;
+  font-size:15px; font-weight:600;
+  text-align:center; line-height:46px;
+  cursor:pointer;
+  text-decoration:none;
+  -webkit-tap-highlight-color:rgba(255,255,255,.2);
+}
+.pcard-cta:active { opacity:.75; }
+.pcard-cta.b { background:var(--blue); color:#fff; }
+.pcard-cta.t { background:var(--teal); color:#fff; }
+
+/* ── PANEL LIST ── */
+.plist-wrap { padding:16px 16px 8px; }
+.plist-head { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+.plh-ico {
+  width:44px; height:44px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; flex-shrink:0;
+}
+.plh-ico.b { background:var(--blue-l); }
+.plh-ico.t { background:var(--teal-l); }
+.plh-name { font-size:20px; font-weight:700; letter-spacing:-.4px; }
+.plh-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+
+.flow-list {
+  background:var(--card);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.07),0 2px 10px rgba(0,0,0,.05);
+}
+
+/* <a> tags for list rows — iOS local Safari needs this */
+.fli {
+  display:flex; align-items:center; gap:12px;
+  padding:13px 14px 13px 12px;
+  min-height:60px;
+  border-bottom:1px solid var(--sep);
+  text-decoration:none; color:inherit;
+  cursor:pointer;
+  -webkit-tap-highlight-color:rgba(0,0,0,.05);
+  background:var(--card);
+}
+.fli:last-child { border-bottom:none; }
+.fli:active { background:rgba(0,0,0,.05); }
+
+.fli-ico {
+  width:38px; height:38px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.fli-ico.b { background:var(--blue-l); }
+.fli-ico.t { background:var(--teal-l); }
+.fli-ico.a { background:var(--amber-l); }
+.fli-ico.g { background:var(--green-l); }
+.fli-ico.v { background:var(--violet-l); }
+
+.fli-txt { flex:1; min-width:0; }
+.fli-name { font-size:14px; font-weight:600; letter-spacing:-.2px; color:#1C1C1E; }
+.fli-desc { font-size:12px; color:var(--muted); margin-top:2px; line-height:1.35; }
+.fli-arr { font-size:18px; color:var(--muted); flex-shrink:0; opacity:.4; font-weight:300; }
+
+/* ── FLOWCHART ── */
+.fc-wrap { padding:16px 16px 8px; }
+.fc-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:24px; }
+.fc-head-ico {
+  width:46px; height:46px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; flex-shrink:0;
+}
+.fc-head-name { font-size:18px; font-weight:700; line-height:1.25; letter-spacing:-.3px; }
+.fc-head-sub { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.4; }
+.flowchart { display:flex; flex-direction:column; align-items:center; }
+
+/* ── NODES ── */
+.node {
+  width:100%; max-width:340px;
+  padding:13px 16px;
+  border-radius:14px;
+  background:var(--card);
+  box-shadow:0 1px 4px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.06);
+  text-align:center;
+  position:relative;
+}
+.node.pill { border-radius:50px; padding:12px 20px; }
+.node-ico { font-size:20px; margin-bottom:4px; display:block; }
+.node-title { font-size:13px; font-weight:600; letter-spacing:-.1px; margin-bottom:3px; }
+.node-desc { font-size:11.5px; color:var(--muted); line-height:1.45; }
+.voice-note { display:block; margin-top:5px; font-style:italic; font-size:10.5px; color:var(--teal); }
+
+.step-dot {
+  position:absolute; top:-9px; left:50%;
+  transform:translateX(-50%);
+  width:18px; height:18px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:8.5px; font-weight:700; color:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.25);
+}
+
+.c-start  { background:#1C1C1E; }
+.c-start .node-title { color:#fff; }
+.c-start .node-desc  { color:rgba(255,255,255,.5); }
+.c-blue   { background:var(--blue-l); }
+.c-blue  .node-title { color:var(--blue); }
+.c-teal   { background:var(--teal-l); }
+.c-teal  .node-title { color:var(--teal); }
+.c-amber  { background:var(--amber-l); }
+.c-amber .node-title { color:var(--amber-d); }
+.c-green  { background:var(--green-l); }
+.c-green .node-title { color:var(--green-d); }
+.c-red    { background:var(--red-l); }
+.c-red   .node-title { color:var(--red-d); }
+.c-voice  { background:var(--violet-l); }
+.c-voice .node-title { color:var(--violet); }
+.c-decision { background:var(--amber-l); }
+.c-decision .node-title { color:var(--amber-d); }
+.c-end-ok {
+  background:linear-gradient(135deg,#2DB64A,#34C759);
+  box-shadow:0 3px 12px rgba(52,199,89,.3);
+}
+.c-end-ok .node-title,.c-end-ok .node-desc { color:#fff; }
+.c-end-ok .node-desc { opacity:.82; }
+.c-end-err {
+  background:linear-gradient(135deg,#E0332A,#FF3B30);
+  box-shadow:0 3px 12px rgba(255,59,48,.28);
+}
+.c-end-err .node-title,.c-end-err .node-desc { color:#fff; }
+.c-end-err .node-desc { opacity:.82; }
+
+/* ── ARROWS ── */
+.arrow { display:flex; flex-direction:column; align-items:center; padding:1px 0; }
+.arr-line { width:2px; height:18px; background:var(--sep); border-radius:1px; }
+.arr-lbl {
+  font-size:10.5px; font-weight:600;
+  padding:3px 10px; border-radius:20px;
+  background:var(--card); border:1px solid var(--sep);
+  color:var(--muted); margin:3px 0;
+}
+.arr-tip {
+  width:0; height:0;
+  border-left:5px solid transparent;
+  border-right:5px solid transparent;
+  border-top:7px solid rgba(60,60,67,.22);
+  margin-top:-1px;
+}
+
+/* ── DIVIDER ── */
+.flow-div {
+  width:100%; text-align:center;
+  padding:18px 0 10px;
+  font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.08em;
+  color:var(--muted);
+}
+
+/* ── BRANCHES ── */
+.branch-wrap { width:100%; display:flex; flex-direction:column; align-items:center; }
+.branch-row  { width:100%; display:flex; flex-direction:column; }
+.branch-col  {
+  display:flex; flex-direction:column; align-items:center;
+  position:relative;
+}
+.branch-col::before {
+  content:''; position:absolute; left:12px; top:0; bottom:0;
+  width:2px; background:var(--sep); border-radius:2px;
+}
+.branch-col:first-child::before { background:rgba(52,199,89,.3); }
+.branch-col:last-child::before  { background:rgba(255,59,48,.2); }
+
+.b-tag {
+  font-size:10.5px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em;
+  padding:3px 10px; border-radius:20px;
+  margin-bottom:5px;
+  align-self:flex-start; margin-left:22px;
+}
+.b-yes { background:var(--green-l); color:var(--green-d); }
+.b-no  { background:var(--red-l);   color:var(--red-d); }
+.b-alt { background:var(--amber-l); color:var(--amber-d); }
+.b-opt { background:var(--violet-l); color:var(--violet); }
+
+.branch-sep {
+  width:calc(100% - 24px); height:1px;
+  background:var(--sep); margin:12px 0;
+}
+
+@media(min-width:580px){
+  .branch-row { flex-direction:row; align-items:flex-start; justify-content:center; gap:12px; }
+  .branch-col { flex:1; max-width:280px; }
+  .branch-col::before { display:none; }
+  .b-tag { align-self:center; margin-left:0; }
+  .branch-sep { display:none; }
+  .node { max-width:none; }
+}
+
+.pad { padding:0 16px; width:100%; }
+.badge {
+  font-size:10px; font-weight:600;
+  padding:2px 7px; border-radius:20px;
+  background:var(--teal-l); color:var(--teal);
+  vertical-align:middle;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="tb-inner">
+    <a id="tBack" href="javascript:void(0)" onclick="goBack(); return false;">
+      <span class="tb-chev">‹</span>
+      <span id="tBackLabel">Back</span>
+    </a>
+    <div id="tTitle">Posture Plus</div>
+    <div class="tb-logo" id="tLogo">P+</div>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div id="s-home" class="screen active">
+  <div class="home-wrap">
+    <div class="home-hero">
+      <h1>Posture Plus<br>User Flow</h1>
+      <p>Tap a panel to explore all user journeys — each flow shows step-by-step nodes connected by arrows.</p>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="ldot" style="background:var(--blue)"></div>Patient</div>
+      <div class="leg"><div class="ldot" style="background:var(--teal)"></div>Clinic</div>
+      <div class="leg"><div class="ldot" style="background:var(--amber)"></div>Decision</div>
+      <div class="leg"><div class="ldot" style="background:var(--green)"></div>Success</div>
+      <div class="leg"><div class="ldot" style="background:var(--red)"></div>Error</div>
+      <div class="leg"><div class="ldot" style="background:var(--violet)"></div>Voice AI</div>
+    </div>
+    <div class="sec-label">Panels</div>
+    <div class="panel-cards">
+
+      <a class="pcard" href="javascript:void(0)" onclick="openPanel('patient'); return false;">
+        <div class="pcard-accent"></div>
+        <div class="pcard-body">
+          <div class="pcard-top">
+            <div class="pcard-ico b">👤</div>
+            <div>
+              <div class="pcard-name">Patient Web App</div>
+              <div class="pcard-desc">Full self-service patient journey</div>
+            </div>
+          </div>
+          <div class="chip-group">
+            <div class="chip-row">🔐&nbsp; Authentication &amp; Profile</div>
+            <div class="chip-row">🧠&nbsp; AI Spine Diagnostics</div>
+            <div class="chip-row">📅&nbsp; Appointment Booking</div>
+            <div class="chip-row">💳&nbsp; Payment &amp; Invoicing</div>
+            <div class="chip-row">🔔&nbsp; Notifications &amp; Chatbot</div>
+          </div>
+          <div class="pcard-cta b">Explore Patient Flows →</div>
+        </div>
+      </a>
+
+      <a class="pcard" href="javascript:void(0)" onclick="openPanel('clinic'); return false;">
+        <div class="pcard-accent teal"></div>
+        <div class="pcard-body">
+          <div class="pcard-top">
+            <div class="pcard-ico t">🏥</div>
+            <div>
+              <div class="pcard-name">Clinic Admin Panel</div>
+              <div class="pcard-desc">Operations, CRM &amp; clinical workflows</div>
+            </div>
+          </div>
+          <div class="chip-group">
+            <div class="chip-row">📊&nbsp; Login &amp; Dashboard</div>
+            <div class="chip-row">⚙️&nbsp; Services &amp; Slots</div>
+            <div class="chip-row">🩻&nbsp; Doctor Review</div>
+            <div class="chip-row">👥&nbsp; Patient CRM &amp; Staff</div>
+            <div class="chip-row">🎙️&nbsp; Voice AI Leads <span class="badge">optional</span></div>
+          </div>
+          <div class="pcard-cta t">Explore Clinic Flows →</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</div><!-- /home -->
+
+<div id="s-patient" class="screen">
+  <div class="plist-wrap">
+    <div class="plist-head">
+      <div class="plh-ico b">👤</div>
+      <div><div class="plh-name">Patient Web App</div><div class="plh-sub">Tap a flow to view the full journey</div></div>
+    </div>
+    <div class="flow-list">
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('p-auth'); return false;"><div class="fli-ico b">🔐</div><div class="fli-txt"><div class="fli-name">Authentication &amp; Profile</div><div class="fli-desc">Register, login, OTP, password reset, edit profile</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('p-ai'); return false;"><div class="fli-ico t">🧠</div><div class="fli-txt"><div class="fli-name">AI Spine Diagnostics</div><div class="fli-desc">Consent, upload, AI analysis, report, booking CTA</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('p-booking'); return false;"><div class="fli-ico b">📅</div><div class="fli-txt"><div class="fli-name">Appointment Booking</div><div class="fli-desc">Search, slot select, confirm, reschedule/cancel</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('p-payment'); return false;"><div class="fli-ico a">💳</div><div class="fli-txt"><div class="fli-name">Payment &amp; Invoicing</div><div class="fli-desc">Stripe gateway, auto-invoice, transaction history</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('p-notif'); return false;"><div class="fli-ico g">🔔</div><div class="fli-txt"><div class="fli-name">Notifications &amp; Chatbot</div><div class="fli-desc">All alert triggers, AI chatbot escalation</div></div><span class="fli-arr">›</span></a>
+    </div>
+  </div>
+</div><!-- /patient -->
+
+<div id="s-clinic" class="screen">
+  <div class="plist-wrap">
+    <div class="plist-head">
+      <div class="plh-ico t">🏥</div>
+      <div><div class="plh-name">Clinic Admin Panel</div><div class="plh-sub">Tap a flow to view the full journey</div></div>
+    </div>
+    <div class="flow-list">
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('c-login'); return false;"><div class="fli-ico t">🔐</div><div class="fli-txt"><div class="fli-name">Login &amp; Dashboard</div><div class="fli-desc">Secure login, metrics, module navigation</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('c-services'); return false;"><div class="fli-ico t">⚙️</div><div class="fli-txt"><div class="fli-name">Services &amp; Slots</div><div class="fli-desc">Create services, configure slot availability</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('c-appt'); return false;"><div class="fli-ico t">📅</div><div class="fli-txt"><div class="fli-name">Appointment Management</div><div class="fli-desc">Calendar, reschedule, cancel, AI detail</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('c-doctor'); return false;"><div class="fli-ico t">🩻</div><div class="fli-txt"><div class="fli-name">Doctor Review &amp; Diagnosis</div><div class="fli-desc">AI review, confirm/override, treatment plan</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('c-crm'); return false;"><div class="fli-ico t">👥</div><div class="fli-txt"><div class="fli-name">Patient CRM &amp; Staff</div><div class="fli-desc">Patient records, staff accounts, RBAC</div></div><span class="fli-arr">›</span></a>
+      <a class="fli" href="javascript:void(0)" onclick="openFlow('c-voice'); return false;"><div class="fli-ico v">🎙️</div><div class="fli-txt"><div class="fli-name">Voice AI Leads <span class="badge">optional</span></div><div class="fli-desc">Inbound call, CRM sync, lead management</div></div><span class="fli-arr">›</span></a>
+    </div>
+  </div>
+</div><!-- /clinic -->
+
+<div id="s-flow" class="screen">
+  <div class="fc-wrap">
+    <div class="fc-head" id="fc-head"></div>
+    <div class="flowchart" id="fc-body"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div id="botnav">
+  <a class="bn active" id="bn-home" href="javascript:void(0)" onclick="goHome(); return false;">
+    <span class="bn-ico">🏠</span><span class="bn-lbl">Home</span>
+  </a>
+  <a class="bn" id="bn-patient" href="javascript:void(0)" onclick="openPanel('patient'); return false;">
+    <span class="bn-ico">👤</span><span class="bn-lbl">Patient</span>
+  </a>
+  <a class="bn" id="bn-clinic" href="javascript:void(0)" onclick="openPanel('clinic'); return false;">
+    <span class="bn-ico">🏥</span><span class="bn-lbl">Clinic</span>
+  </a>
+</div>
+
+<script>
+// ── NAVIGATION ──
+var stack = [];
+
+function setNav(id) {
+  ['home','patient','clinic'].forEach(function(x){
+    document.getElementById('bn-'+x).classList.remove('active');
+  });
+  if (id && document.getElementById('bn-'+id)) {
+    document.getElementById('bn-'+id).classList.add('active');
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s){
+    s.classList.remove('active');
+  });
+  document.getElementById('s-'+id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function updateTopBar(title, backLabel, showBack, showLogo) {
+  document.getElementById('tTitle').textContent = title;
+  document.getElementById('tBackLabel').textContent = backLabel || 'Back';
+  var backEl = document.getElementById('tBack');
+  if (showBack) { backEl.classList.add('show'); } else { backEl.classList.remove('show'); }
+  document.getElementById('tLogo').style.display = showLogo ? '' : 'none';
+}
+
+function goHome() {
+  stack = [];
+  showScreen('home');
+  updateTopBar('Posture Plus', '', false, true);
+  setNav('home');
+}
+
+function goBack() {
+  stack.pop();
+  if (!stack.length) { goHome(); return; }
+  var top = stack[stack.length - 1];
+  if (top === 'patient') { _doPanel('patient'); }
+  else if (top === 'clinic') { _doPanel('clinic'); }
+  else { goHome(); }
+}
+
+function openPanel(p) {
+  if (stack[stack.length - 1] !== p) stack.push(p);
+  _doPanel(p);
+}
+
+function _doPanel(p) {
+  var isP = (p === 'patient');
+  showScreen(p);
+  updateTopBar(isP ? 'Patient App' : 'Clinic Admin', 'Home', true, false);
+  setNav(p);
+}
+
+function openFlow(id) {
+  stack.push(id);
+  var f = FLOWS[id];
+  if (!f) return;
+  var parent = stack[stack.length - 2];
+  var parentLabel = (parent === 'patient') ? 'Patient App' : 'Clinic Admin';
+
+  document.getElementById('fc-head').innerHTML =
+    '<div class="fc-head-ico" style="background:'+f.iconBg+'">'+f.icon+'</div>' +
+    '<div><div class="fc-head-name">'+f.title+'</div>' +
+    '<div class="fc-head-sub">'+f.subtitle+'</div></div>';
+
+  var body = document.getElementById('fc-body');
+  body.innerHTML = '';
+  renderFlow(body, f.nodes);
+
+  updateTopBar(f.title, parentLabel, true, false);
+  setNav(null);
+  showScreen('flow');
+}
+
+// ── RENDER ──
+function renderFlow(container, nodes) {
+  nodes.forEach(function(n, i) {
+    if (n.type === 'arrow')        { container.appendChild(mkArrow(n.label)); }
+    else if (n.type === 'branch')  { container.appendChild(mkBranch(n)); }
+    else if (n.type === 'divider') {
+      var d = document.createElement('div');
+      d.className = 'flow-div pad';
+      d.textContent = n.label.replace(/[─]/g,'').trim();
+      container.appendChild(d);
+    } else {
+      container.appendChild(mkNode(n, i));
+    }
+  });
+}
+
+function mkNode(n, idx) {
+  var el = document.createElement('div');
+  el.className = 'node pad' + (n.pill ? ' pill' : '') + ' c-' + (n.c || 'blue');
+  el.innerHTML =
+    (n.step ? '<div class="step-dot" style="background:'+(n.sc||'#007AFF')+'">'+n.step+'</div>' : '') +
+    '<div class="node-ico">'+(n.icon||'')+'</div>' +
+    '<div class="node-title">'+n.title+'</div>' +
+    (n.desc ? '<div class="node-desc">'+n.desc+'</div>' : '') +
+    (n.voice ? '<span class="voice-note">🎙️ Powered by Caller.Digital AI Voice</span>' : '');
+  return el;
+}
+
+function mkArrow(label) {
+  var el = document.createElement('div');
+  el.className = 'arrow';
+  el.innerHTML =
+    '<div class="arr-line"></div>' +
+    (label ? '<div class="arr-lbl">'+label+'</div><div class="arr-line" style="height:12px"></div>' : '') +
+    '<div class="arr-tip"></div>';
+  return el;
+}
+
+function mkBranch(n) {
+  var wrap = document.createElement('div');
+  wrap.className = 'branch-wrap';
+  wrap.appendChild(mkArrow(n.question || ''));
+
+  var dec = document.createElement('div');
+  dec.className = 'node pad c-decision';
+  dec.innerHTML = '<div class="node-ico">⚖️</div><div class="node-title">'+n.label+'</div>';
+  wrap.appendChild(dec);
+
+  var row = document.createElement('div');
+  row.className = 'branch-row';
+
+  n.branches.forEach(function(b, bi) {
+    if (bi > 0) {
+      var sep = document.createElement('div');
+      sep.className = 'branch-sep';
+      row.appendChild(sep);
+    }
+    var col = document.createElement('div');
+    col.className = 'branch-col';
+    col.appendChild(mkArrow(''));
+    var tag = document.createElement('div');
+    tag.className = 'b-tag ' + (b.tc || 'b-alt');
+    tag.textContent = b.label;
+    col.appendChild(tag);
+    (b.nodes || []).forEach(function(bn, bi2) {
+      col.appendChild(mkNode(bn, bi2));
+      if (bi2 < b.nodes.length - 1) col.appendChild(mkArrow(''));
+    });
+    row.appendChild(col);
+  });
+
+  wrap.appendChild(row);
+  if (n.merge) { wrap.appendChild(mkArrow(n.ml || '')); wrap.appendChild(mkNode(n.merge, 0)); }
+  return wrap;
+}
+
+// ── FLOW DATA ──
+var FLOWS = {
+
+'p-auth':{icon:'🔐',iconBg:'#E8F1FF',title:'Auth & Profile',subtitle:'Registration · Login · Password Reset · Profile Edit',nodes:[
+  {c:'start',pill:true,icon:'🚀',title:'App Launch',desc:'Patient opens Posture Plus web app'},
+  {type:'arrow'},
+  {type:'branch',label:'New or Returning?',branches:[
+    {label:'New Patient',tc:'b-yes',nodes:[
+      {c:'blue',icon:'📝',title:'Registration Form',desc:'Name, DOB, gender, email / phone, create password',step:'1',sc:'#007AFF'},
+      {c:'blue',icon:'📱',title:'OTP / Email Verification',desc:'OTP via SMS or verification link via email',step:'2',sc:'#007AFF'},
+      {c:'blue',icon:'✅',title:'Verify Code',desc:'Enter OTP. 3 failed attempts = temp block.',step:'3',sc:'#007AFF'},
+      {c:'blue',icon:'👤',title:'Complete Profile',desc:'Address, emergency contact, health info, preferences',step:'4',sc:'#007AFF'},
+      {c:'end-ok',pill:true,icon:'🎉',title:'Account Created',desc:'Firebase active. Welcome email sent.'}
+    ]},
+    {label:'Returning',tc:'b-no',nodes:[
+      {c:'blue',icon:'🔑',title:'Enter Credentials',desc:'Email/phone + password',step:'1',sc:'#007AFF'},
+      {c:'blue',icon:'🔒',title:'Firebase Auth Check',desc:'5 failed attempts = account locked',step:'2',sc:'#007AFF'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Login Successful',desc:'Token issued. Dashboard loaded.'}
+    ]}
+  ]},
+  {type:'divider',label:'── Password Reset ──'},
+  {c:'amber',icon:'❓',title:'Forgot Password',desc:'Patient taps "Forgot Password"'},
+  {type:'arrow'},
+  {c:'amber',icon:'📧',title:'Enter Email / Phone',desc:'OTP via SMS or reset link via email'},
+  {type:'arrow'},
+  {c:'amber',icon:'🔢',title:'Enter OTP & New Password',desc:'Password strength validated. Confirmation required.'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'✅',title:'Password Reset',desc:'Redirected to Login screen'},
+  {type:'divider',label:'── Profile Management ──'},
+  {c:'blue',icon:'👁️',title:'View Profile',desc:'Name, DOB, gender, contact, health info, preferences'},
+  {type:'arrow'},
+  {c:'blue',icon:'✏️',title:'Edit Profile',desc:'All fields editable. Update any detail.'},
+  {type:'arrow'},
+  {c:'blue',icon:'💾',title:'Save Changes',desc:'Validation runs. Saved to Firebase. Toast shown.'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'✅',title:'Profile Updated'}
+]},
+
+'p-ai':{icon:'🧠',iconBg:'#E0F4FC',title:'AI Spine Diagnostics',subtitle:'Consent → Upload → AI Analysis → Report → Booking CTA',nodes:[
+  {c:'start',pill:true,icon:'🩻',title:'Navigate to AI Diagnostics',desc:'Patient selects "AI Spine Analysis"'},
+  {type:'arrow'},
+  {c:'amber',icon:'📋',title:'Medical Consent Modal',desc:'Mandatory: results are investigative only, not a diagnosis.',step:'1',sc:'#FF9500'},
+  {type:'branch',label:'Consent Given?',branches:[
+    {label:'✓ Accepted',tc:'b-yes',nodes:[{c:'teal',icon:'📤',title:'Upload X-Ray',desc:'Drag-drop or browse. JPEG, PNG, DICOM supported.',step:'2',sc:'#0A7EA4'}]},
+    {label:'✗ Declined',tc:'b-no',nodes:[{c:'end-err',pill:true,icon:'🚫',title:'Access Blocked',desc:'Returns to Dashboard.'}]}
+  ]},
+  {type:'branch',label:'File Valid?',branches:[
+    {label:'✓ Valid',tc:'b-yes',nodes:[
+      {c:'teal',icon:'⬆️',title:'Uploading',desc:'Progress bar. Handshake Secure status.',step:'3',sc:'#0A7EA4'},
+      {c:'teal',icon:'🤖',title:'AI Engine Processing',desc:'Cobb angle, vertebral wedge, disc spacing, posture markers.',step:'4',sc:'#0A7EA4'}
+    ]},
+    {label:'✗ Invalid',tc:'b-no',nodes:[{c:'red',icon:'⚠️',title:'Upload Error',desc:'Wrong format or too large. Re-select file.'}]}
+  ]},
+  {type:'branch',label:'Analysis OK?',branches:[
+    {label:'✓ Success',tc:'b-yes',nodes:[
+      {c:'teal',icon:'📊',title:'AI Report Generated',desc:'Annotated X-ray, findings, Risk badge (Low/Moderate/High), disclaimer.',step:'5',sc:'#0A7EA4'},
+      {c:'teal',icon:'👁️',title:'Patient Views Report',desc:'Firebase notification: "Your report is ready."',step:'6',sc:'#0A7EA4'},
+      {c:'teal',icon:'⬇️',title:'Download PDF Report',desc:'Branded PDF saved to account history.',step:'7',sc:'#0A7EA4'}
+    ]},
+    {label:'✗ Failed',tc:'b-no',nodes:[{c:'red',icon:'❌',title:'Processing Failed',desc:'Retry option. Support chatbot triggered.'}]}
+  ]},
+  {type:'branch',label:'Book Consultation?',branches:[
+    {label:'Yes — Book',tc:'b-yes',nodes:[
+      {c:'blue',icon:'📅',title:'AI Booking CTA',desc:'Clinic pre-suggested. Service pre-filled from findings.',step:'8',sc:'#007AFF'},
+      {c:'end-ok',pill:true,icon:'→',title:'Goes to Booking Flow'}
+    ]},
+    {label:'Skip',tc:'b-no',nodes:[{c:'end-ok',pill:true,icon:'✅',title:'Report Saved to History'}]}
+  ]}
+]},
+
+'p-booking':{icon:'📅',iconBg:'#E8F1FF',title:'Appointment Booking',subtitle:'Manual or AI-suggested booking → slot → confirm → manage',nodes:[
+  {c:'start',pill:true,icon:'📅',title:'Entry Point',desc:'From AI report CTA (auto-filled) OR "Book Appointment" nav'},
+  {type:'branch',label:'Entry Type?',branches:[
+    {label:'From AI Report',tc:'b-yes',nodes:[{c:'teal',icon:'⚡',title:'Auto-Filled Booking',desc:'Clinic pre-suggested. Service & notes auto-filled.',step:'1',sc:'#0A7EA4'}]},
+    {label:'Manual',tc:'b-no',nodes:[{c:'blue',icon:'🔍',title:'Search Clinic / Service',desc:'Select clinic, service type, doctor (if applicable).',step:'1',sc:'#007AFF'}]}
+  ]},
+  {c:'blue',icon:'🗓️',title:'Select Date & Time Slot',desc:'Real-time calendar. Booked slots greyed out.',step:'2',sc:'#007AFF'},
+  {type:'arrow'},
+  {c:'blue',icon:'📋',title:'Review Booking Details',desc:'Clinic, service, doctor, date/time, fee, AI note if applicable.',step:'3',sc:'#007AFF'},
+  {type:'arrow'},
+  {c:'amber',icon:'✅',title:'Confirm & Pay',desc:'Slot held. Redirect to payment.',step:'4',sc:'#FF9500'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'→',title:'Continues to Payment Flow'},
+  {type:'divider',label:'── Reschedule / Cancel ──'},
+  {c:'blue',icon:'📋',title:'View Upcoming Appointments',desc:'Confirmed appointments with clinic, service, date/time.'},
+  {type:'arrow'},
+  {c:'blue',icon:'👆',title:'Select Appointment',desc:'Options shown: Reschedule or Cancel.'},
+  {type:'branch',label:'Action?',branches:[
+    {label:'Reschedule',tc:'b-yes',nodes:[
+      {c:'blue',icon:'🔄',title:'Choose New Slot',desc:'Same calendar. Within reschedule window.'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Rescheduled',desc:'Patient & clinic notified.'}
+    ]},
+    {label:'Cancel',tc:'b-no',nodes:[
+      {c:'red',icon:'⚠️',title:'Cancellation Confirm',desc:'Dialog with cancellation policy shown.'},
+      {c:'end-err',pill:true,icon:'❌',title:'Cancelled',desc:'Slot freed. Email sent.'}
+    ]}
+  ]}
+]},
+
+'p-payment':{icon:'💳',iconBg:'#FFF3E0',title:'Payment & Invoicing',subtitle:'Stripe gateway → invoice → email delivery → transaction history',nodes:[
+  {c:'start',pill:true,icon:'💳',title:'Payment Gateway Loaded',desc:'Stripe screen: fee, clinic, appointment time'},
+  {type:'arrow'},
+  {c:'amber',icon:'💳',title:'Enter Card Details',desc:'Card number, expiry, CVV. PCI-compliant via Stripe.',step:'1',sc:'#FF9500'},
+  {type:'arrow'},
+  {c:'amber',icon:'🔒',title:'Tap "Pay Now"',desc:'Payment request sent to Stripe.',step:'2',sc:'#FF9500'},
+  {type:'branch',label:'Payment OK?',branches:[
+    {label:'✓ Success',tc:'b-yes',nodes:[
+      {c:'green',icon:'✅',title:'Confirmed',desc:'Booking status → Confirmed.',step:'3',sc:'#34C759'},
+      {c:'green',icon:'🧾',title:'Invoice Auto-Generated',desc:'Branded PDF: details, amount, transaction ID.',step:'4',sc:'#34C759'},
+      {c:'green',icon:'📧',title:'Invoice Emailed',desc:'PDF to registered email + in-app notification.',step:'5',sc:'#34C759'},
+      {c:'end-ok',pill:true,icon:'🎉',title:'Booking Confirmed',desc:'In Upcoming Appointments.'}
+    ]},
+    {label:'✗ Failed',tc:'b-no',nodes:[
+      {c:'red',icon:'❌',title:'Payment Failed',desc:'Retry option. Slot held 5 mins.'},
+      {c:'end-err',pill:true,icon:'🚫',title:'Not Confirmed',desc:'Slot released if no payment.'}
+    ]}
+  ]},
+  {type:'divider',label:'── Transaction History ──'},
+  {c:'blue',icon:'📜',title:'Navigate to Transactions',desc:'From profile or nav menu.'},
+  {type:'arrow'},
+  {c:'blue',icon:'📋',title:'View Payment Records',desc:'Service, date, amount, status, downloadable invoice.',step:'1',sc:'#007AFF'},
+  {type:'arrow'},
+  {c:'blue',icon:'⬇️',title:'Download Invoice',desc:'Tap download. PDF opens immediately.',step:'2',sc:'#007AFF'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'✅',title:'Invoice Downloaded'}
+]},
+
+'p-notif':{icon:'🔔',iconBg:'#E3F9EB',title:'Notifications & Chatbot',subtitle:'All notification triggers and AI chatbot escalation flow',nodes:[
+  {c:'start',pill:true,icon:'🔔',title:'Notification System',desc:'Firebase triggers based on user events'},
+  {type:'arrow'},
+  {c:'teal',icon:'📱',title:'Delivery Channels',desc:'SMS + Email + In-App Push. Respects patient preferences.',step:'1',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'green',icon:'✅',title:'Booking Confirmation',desc:'Sent immediately on confirmed booking + payment.'},
+  {type:'arrow'},
+  {c:'green',icon:'⏰',title:'Appointment Reminder',desc:'24 hours and 1 hour before appointment.'},
+  {type:'arrow'},
+  {c:'teal',icon:'🧠',title:'AI Report Ready',desc:'Sent when AI analysis completes.'},
+  {type:'arrow'},
+  {c:'green',icon:'🧾',title:'Invoice Delivery',desc:'PDF invoice emailed on successful payment.'},
+  {type:'arrow'},
+  {c:'amber',icon:'🔄',title:'Reschedule / Cancel Alert',desc:'Sent when appointment modified by either party.'},
+  {type:'arrow'},
+  {c:'amber',icon:'🔑',title:'Password Reset Alert',desc:'Sent when reset is requested or completed.'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'📥',title:'All Logged',desc:'Visible in in-app notification centre'},
+  {type:'divider',label:'── AI Chatbot ──'},
+  {c:'start',pill:true,icon:'🤖',title:'Open AI Chatbot',desc:'Chat icon available on all screens'},
+  {type:'arrow'},
+  {c:'blue',icon:'💬',title:'Patient Types Query',desc:'Booking help, service info, pricing, FAQs.',step:'1',sc:'#007AFF'},
+  {type:'arrow'},
+  {c:'blue',icon:'🤖',title:'Chatbot Responds',desc:'Contextual answer. Deep links to relevant screens.',step:'2',sc:'#007AFF'},
+  {type:'branch',label:'Resolved?',branches:[
+    {label:'✓ Yes',tc:'b-yes',nodes:[{c:'end-ok',pill:true,icon:'✅',title:'Chat Ends',desc:'Patient continues task.'}]},
+    {label:'Needs Help',tc:'b-no',nodes:[
+      {c:'amber',icon:'📞',title:'Escalate to Clinic',desc:'Contact details or support channel provided.'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Support Provided'}
+    ]}
+  ]}
+]},
+
+'c-login':{icon:'🔐',iconBg:'#E0F4FC',title:'Login & Dashboard',subtitle:'Secure login, metrics dashboard and module navigation',nodes:[
+  {c:'start',pill:true,icon:'🏥',title:'Access Clinic Admin URL'},
+  {type:'arrow'},
+  {c:'teal',icon:'🔑',title:'Enter Credentials',desc:'Email + password. Reset option available.',step:'1',sc:'#0A7EA4'},
+  {type:'branch',label:'Valid?',branches:[
+    {label:'✓ Valid',tc:'b-yes',nodes:[{c:'end-ok',pill:true,icon:'✅',title:'Login Successful',desc:'RBAC verified. Dashboard loaded.'}]},
+    {label:'✗ Failed',tc:'b-no',nodes:[
+      {c:'red',icon:'❌',title:'Login Error',desc:'Reset option shown. Repeated fails = lock.'},
+      {c:'end-err',pill:true,icon:'🔒',title:'Account Locked'}
+    ]}
+  ]},
+  {c:'teal',icon:'📊',title:'Command Center',desc:'Loaded after login.',step:'2',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'📅',title:"Today's Appointments",desc:'Time-ordered list.',step:'3',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'👥',title:'Patient Mix',desc:'New vs returning breakdown.',step:'4',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'💰',title:'Real-Time Revenue',desc:"Today's revenue + AI consultation split.",step:'5',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'🧭',title:'Navigate to Any Module',desc:'Appointments, Services, CRM, Staff, Reports, Leads'}
+]},
+
+'c-services':{icon:'⚙️',iconBg:'#E0F4FC',title:'Services & Slots',subtitle:'Create/edit services and configure appointment slot availability',nodes:[
+  {c:'start',pill:true,icon:'⚙️',title:'Open Services Module'},
+  {type:'arrow'},
+  {c:'teal',icon:'➕',title:'Create New Service',desc:'Name, price, duration (mins), description.',step:'1',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'💾',title:'Service Published',desc:'Visible to patients immediately.',step:'2',sc:'#0A7EA4'},
+  {type:'branch',label:'Edit or Deactivate?',branches:[
+    {label:'Edit',tc:'b-yes',nodes:[
+      {c:'teal',icon:'✏️',title:'Edit Service',desc:'Update name, price, duration or description.'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Service Updated'}
+    ]},
+    {label:'Deactivate',tc:'b-no',nodes:[
+      {c:'red',icon:'🚫',title:'Confirm Deactivate',desc:'Hidden from patient booking.'},
+      {c:'end-err',pill:true,icon:'⚠️',title:'Service Hidden',desc:'Re-activate any time.'}
+    ]}
+  ]},
+  {type:'divider',label:'── Slot Configuration ──'},
+  {c:'teal',icon:'🕐',title:'Configure Working Hours',desc:'Hours per day, slot durations, break times.',step:'1',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'🗓️',title:'Slots Auto-Generated',desc:'System creates bookable slots automatically.',step:'2',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'✅',title:'Slots Published',desc:'Live on patient booking calendar'}
+]},
+
+'c-appt':{icon:'📅',iconBg:'#E0F4FC',title:'Appointment Management',subtitle:'Calendar, AI detail access, reschedule and cancel',nodes:[
+  {c:'start',pill:true,icon:'📅',title:'Open Appointments Module',desc:'Calendar or List view'},
+  {type:'arrow'},
+  {c:'teal',icon:'👆',title:'Tap an Appointment',desc:'Patient name, service, date/time, payment status.',step:'1',sc:'#0A7EA4'},
+  {type:'branch',label:'AI Consultation?',branches:[
+    {label:'Yes',tc:'b-yes',nodes:[{c:'teal',icon:'🩻',title:'View AI Report',desc:'X-ray + AI diagnostic report within detail.',step:'2',sc:'#0A7EA4'}]},
+    {label:'Standard',tc:'b-no',nodes:[{c:'teal',icon:'📋',title:'View Details',desc:'Standard booking info only.'}]}
+  ]},
+  {type:'branch',label:'Action?',branches:[
+    {label:'Reschedule',tc:'b-yes',nodes:[
+      {c:'teal',icon:'🔄',title:'Select New Slot',desc:'Pick from availability.'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Rescheduled',desc:'Patient notified via push & email.'}
+    ]},
+    {label:'Cancel',tc:'b-no',nodes:[
+      {c:'red',icon:'❌',title:'Cancel',desc:'Admin confirms. Slot freed.'},
+      {c:'end-err',pill:true,icon:'🚫',title:'Cancelled',desc:'Patient notified.'}
+    ]}
+  ]}
+]},
+
+'c-doctor':{icon:'🩻',iconBg:'#E0F4FC',title:'Doctor Review & Diagnosis',subtitle:'AI-assisted review → confirm or override → treatment plan',nodes:[
+  {c:'start',pill:true,icon:'🩻',title:'Open AI Consultation',desc:'Patient appointment with AI report linked'},
+  {type:'arrow'},
+  {c:'teal',icon:'🔍',title:'Doctor Review Interface',desc:'Annotated X-ray: Cobb angle, vertebral wedge, disc spacing.',step:'1',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'📊',title:'Review Structured Findings',desc:'Risk (Low/Moderate/High), measurements, findings, disclaimer.',step:'2',sc:'#0A7EA4'},
+  {type:'branch',label:'Doctor Decision?',branches:[
+    {label:'Confirm AI',tc:'b-yes',nodes:[{c:'green',icon:'✅',title:'Confirm AI Findings',desc:'Tap confirm. Add supplementary notes.',step:'3',sc:'#34C759'}]},
+    {label:'Override',tc:'b-no',nodes:[{c:'amber',icon:'✏️',title:'Override / Edit',desc:'Edit observations. Add clinical notes. Logged for audit.',step:'3',sc:'#FF9500'}]}
+  ]},
+  {c:'teal',icon:'📝',title:'Record Treatment Plan',desc:'Full treatment plan + prescriptions. Tap Record.',step:'4',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'end-ok',pill:true,icon:'✅',title:'Diagnosis Recorded',desc:'Saved to patient history. Linked to appointment.'}
+]},
+
+'c-crm':{icon:'👥',iconBg:'#E0F4FC',title:'Patient CRM & Staff',subtitle:'Patient records, profile view and staff account management',nodes:[
+  {c:'start',pill:true,icon:'👥',title:'Open Patient CRM'},
+  {type:'arrow'},
+  {c:'teal',icon:'🔍',title:'Search & Filter',desc:'By name or phone. Filter by date, status. RBAC applied.',step:'1',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'👤',title:'View Patient Profile',desc:'Personal info, contact, history, payments, AI reports.',step:'2',sc:'#0A7EA4'},
+  {type:'branch',label:'Action?',branches:[
+    {label:'View AI Report',tc:'b-yes',nodes:[
+      {c:'teal',icon:'🩻',title:'Access AI Report',desc:'Opens linked diagnostic report.'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Report Viewed'}
+    ]},
+    {label:'Manage Appt',tc:'b-no',nodes:[
+      {c:'teal',icon:'📅',title:'Go to Appointment',desc:'Navigates to appointment management.'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Action Taken'}
+    ]}
+  ]},
+  {type:'divider',label:'── Staff Management ──'},
+  {c:'teal',icon:'👷',title:'Open Staff Module'},
+  {type:'arrow'},
+  {c:'teal',icon:'➕',title:'Create Staff Account',desc:'Name, email, phone, role. Activation email sent.',step:'1',sc:'#0A7EA4'},
+  {type:'branch',label:'Edit or Deactivate?',branches:[
+    {label:'Edit',tc:'b-yes',nodes:[
+      {c:'teal',icon:'✏️',title:'Update Staff',desc:'Change name, email or role.'},
+      {c:'end-ok',pill:true,icon:'✅',title:'Updated',desc:'Access changes immediately.'}
+    ]},
+    {label:'Deactivate',tc:'b-no',nodes:[
+      {c:'red',icon:'🚫',title:'Deactivate',desc:'Access removed immediately.'},
+      {c:'end-err',pill:true,icon:'🔒',title:'Account Deactivated'}
+    ]}
+  ]}
+]},
+
+'c-voice':{icon:'🎙️',iconBg:'#F3E8FF',title:'Voice AI Leads',subtitle:'Optional · Powered by Caller.Digital AI Voice · 24/7 inbound & CRM sync',nodes:[
+  {c:'start',pill:true,icon:'📞',title:'Patient Calls Clinic',desc:'Routed to Caller.Digital AI agent (24/7, after-hours)',voice:true},
+  {type:'arrow'},
+  {c:'voice',icon:'🎤',title:'AI Agent Greets',desc:'Voice-to-text begins. Patient speaks naturally.',step:'1',sc:'#AF52DE',voice:true},
+  {type:'arrow'},
+  {c:'voice',icon:'🧠',title:'Intent Classification',desc:'Booking / Inquiry / Availability / FAQ / Support.',step:'2',sc:'#AF52DE',voice:true},
+  {type:'branch',label:'Call Intent?',branches:[
+    {label:'Booking',tc:'b-yes',nodes:[{c:'teal',icon:'📅',title:'Capture Booking Intent',desc:'Name, phone, service, timing logged.',voice:true}]},
+    {label:'FAQ / Inquiry',tc:'b-alt',nodes:[{c:'teal',icon:'💬',title:'Automated Response',desc:'Answers pricing, services, location.',voice:true}]},
+    {label:'Support',tc:'b-no',nodes:[{c:'amber',icon:'⚠️',title:'Escalation Flagged',desc:'Marked "Action Required".',voice:true}]}
+  ]},
+  {c:'voice',icon:'📝',title:'AI Call Summary',desc:'Name, phone, intent, timing, summary, next action.',step:'3',sc:'#AF52DE',voice:true},
+  {type:'arrow'},
+  {c:'voice',icon:'🔗',title:'Secure Webhook Push',desc:'Structured data sent to Posture Plus via API.',step:'4',sc:'#AF52DE',voice:true},
+  {type:'branch',label:'In CRM?',branches:[
+    {label:'Existing',tc:'b-yes',nodes:[{c:'teal',icon:'🔄',title:'Update Record',desc:'Call log appended. Status updated.'}]},
+    {label:'New',tc:'b-no',nodes:[{c:'teal',icon:'➕',title:'Create Lead',desc:'New record: name, phone, source=Voice AI.'}]}
+  ]},
+  {c:'teal',icon:'📋',title:'Admin Reviews Leads',desc:'Summary, intent, status: New / Contacted / Converted / Follow-up.',step:'5',sc:'#0A7EA4'},
+  {type:'arrow'},
+  {c:'teal',icon:'📞',title:'Follow-up Action',desc:'Admin calls back or books on their behalf.',step:'6',sc:'#0A7EA4'},
+  {type:'branch',label:'Outcome?',branches:[
+    {label:'Converted',tc:'b-yes',nodes:[{c:'end-ok',pill:true,icon:'🎉',title:'Lead Converted',desc:'Appointment booked. Record linked.'}]},
+    {label:'Follow-up',tc:'b-no',nodes:[{c:'end-err',pill:true,icon:'🔄',title:'Follow-up Scheduled',desc:'Stays in lead log.'}]}
+  ]}
+]}
+
+};
+</script>
+</body>
+</html>
